@@ -239,62 +239,130 @@
 #    org.springframework.web.reactive: DEBUG
 
 
+#
+#spring:
+#  application:
+#    name: API-GATEWAY
+#  main:
+#    web-application-type: reactive
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://localhost:8181/realms/spring-boot-microservice-realm
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: inventory-service
+#          uri: lb://INVENTORY-SERVICE
+#          predicates:
+#            - Path=/api/inventory/**
+#
+#        - id: order-service
+#          uri: lb://ORDER-SERVICE
+#          predicates:
+#            - Path=/api/order/**
+#
+#        - id: product-service
+#          uri: lb://PRODUCT-SERVICE
+#          predicates:
+#            - Path=/api/product/**, /api/test/**
+#
+#        # Public routes (no authentication)
+#        - id: public-routes
+#          uri: lb://PRODUCT-SERVICE
+#          predicates:
+#            - Path=/api/public/**
+#
+#        # Eureka Dashboard
+#        - id: discovery-server
+#          uri: http://localhost:8761
+#          predicates:
+#            - Path=/eureka/web
+#          filters:
+#            - SetPath=/
+#        - id: discovery-server-static
+#          uri: http://localhost:8761
+#          predicates:
+#            - Path=/eureka/**
+#
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka/
+#    fetch-registry: true
+#    register-with-eureka: true
+#
+#logging:
+#  level:
+#    org.springframework.cloud.gateway: DEBUG
+#    org.springframework.security: DEBUG
+#    org.springframework.web.reactive: DEBUG
+
+
 
 spring:
   application:
-    name: API-GATEWAY
+    name: API-GATEWAY  # Identifies this as the API Gateway in service registry
   main:
-    web-application-type: reactive
+    web-application-type: reactive  # Use reactive programming model for better performance
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8181/realms/spring-boot-microservice-realm
+          issuer-uri: http://localhost:8181/realms/spring-boot-microservice-realm  # Keycloak OIDC issuer
   cloud:
     gateway:
       routes:
+        # Inventory Service Routing
         - id: inventory-service
-          uri: lb://INVENTORY-SERVICE
+          uri: lb://INVENTORY-SERVICE  # 'lb://' enables client-side load balancing via Eureka
           predicates:
-            - Path=/api/inventory/**
+            - Path=/api/inventory/**   # Route requests starting with /api/inventory to inventory service
 
+        # Order Service Routing
         - id: order-service
           uri: lb://ORDER-SERVICE
           predicates:
-            - Path=/api/order/**
+            - Path=/api/order/**       # Route order-related requests to order service
 
+        # Product Service Routing
         - id: product-service
           uri: lb://PRODUCT-SERVICE
           predicates:
-            - Path=/api/product/**, /api/test/**
+            - Path=/api/product/**, /api/test/**  # Multiple path patterns for product service
 
-        # Public routes (no authentication)
+        # Public routes (no authentication required)
         - id: public-routes
           uri: lb://PRODUCT-SERVICE
           predicates:
-            - Path=/api/public/**
+            - Path=/api/public/**      # Public endpoints bypass security
 
-        # Eureka Dashboard
+        # Eureka Dashboard Routing
         - id: discovery-server
-          uri: http://localhost:8761
+          uri: http://localhost:8761   # Static URI for Eureka server
           predicates:
-            - Path=/eureka/web
+            - Path=/eureka/web         # Route Eureka web interface
           filters:
-            - SetPath=/
+            - SetPath=/                # Rewrite path to root for Eureka
+
+        # Eureka Static Resources
         - id: discovery-server-static
           uri: http://localhost:8761
           predicates:
-            - Path=/eureka/**
+            - Path=/eureka/**          # Route all Eureka static resources (CSS, JS)
 
+# Eureka Client Configuration - Service Discovery
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+      defaultZone: http://localhost:8761/eureka/  # Connect to Eureka server
+    fetch-registry: true            # Download service registry from Eureka
+    register-with-eureka: true      # Register gateway itself with Eureka
 
+# Logging Configuration - Gateway Debugging
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.web.reactive: DEBUG
+    org.springframework.cloud.gateway: DEBUG    # Debug gateway routing decisions
+    org.springframework.security: DEBUG         # Debug security and JWT validation
+    org.springframework.web.reactive: DEBUG     # Debug reactive web layer

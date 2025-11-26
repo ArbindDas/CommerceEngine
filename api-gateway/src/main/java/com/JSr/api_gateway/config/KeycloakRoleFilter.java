@@ -90,9 +90,9 @@ public class KeycloakRoleFilter extends AbstractGatewayFilterFactory<KeycloakRol
     /**
      * Configuration class for route-specific role requirements
      */
-    @Getter
-    @Setter
+
     public static class Config {
+
         /**
          * The specific role required to access this route
          * Example: "ADMIN", "INVENTORY_MANAGER", "ORDER_PROCESSOR"
@@ -103,5 +103,21 @@ public class KeycloakRoleFilter extends AbstractGatewayFilterFactory<KeycloakRol
          * Optional client ID for client-specific role mapping
          */
         private String clientId;
+
+        public String getRequiredRole() {
+            return requiredRole;
+        }
+
+        public void setRequiredRole(String requiredRole) {
+            this.requiredRole = requiredRole;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public void setClientId(String clientId) {
+            this.clientId = clientId;
+        }
     }
 }

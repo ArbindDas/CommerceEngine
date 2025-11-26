@@ -1,44 +1,253 @@
+#spring:
+#  application:
+#    name: ORDER-SERVICE
+#  datasource:
+#    url: jdbc:mysql://localhost:3306/orderservice
+#    username: root
+#    password: captain@cz
+#    hikari:
+#      maximum-pool-size: 10
+#      connection-timeout: 30000
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+#        dialect: org.hibernate.dialect.MySQL8Dialect
+#        jdbc:
+#          time_zone: UTC
+#  cloud:
+#    openfeign:
+#      client:
+#        config:
+#          default:
+#            connectTimeout: 5000
+#            readTimeout: 5000
+#            loggerLevel: basic
+#
+## If using Eureka (uncomment if needed)
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka/
+#
+#server:
+#  port: 8081
+#
+#logging:
+#  level:
+#    com.JSR.order_service.client.InventoryClient: DEBUG  # For Feign debugging
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.type.descriptor.sql: TRACE
+#    org.hibernate.orm.jdbc.bind: TRACE
+
+#
+#spring:
+#  application:
+#    name: ORDER-SERVICE
+#  datasource:
+#    url: jdbc:mysql://localhost:3306/orderservice
+#    username: root
+#    password: captain@cz
+#    hikari:
+#      maximum-pool-size: 10
+#      connection-timeout: 30000
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+#        dialect: org.hibernate.dialect.MySQL8Dialect
+#        jdbc:
+#          time_zone: UTC
+#  cloud:
+#    openfeign:
+#      circuitbreaker:
+#        enabled: true
+#        group:
+#          enabled: true
+#      client:
+#        config:
+#          default:
+#            connectTimeout: 5000
+#            readTimeout: 5000
+#            loggerLevel: basic
+#
+## Eureka Client Configuration
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka/
+#    fetch-registry: true
+#    register-with-eureka: true
+#
+## Resilience4j Configuration
+#resilience4j:
+#  circuitbreaker:
+#    instances:
+#      inventory-service:
+#        registerHealthIndicator: true
+#        slidingWindowSize: 10
+#        minimumNumberOfCalls: 5
+#        permittedNumberOfCallsInHalfOpenState: 3
+#        automaticTransitionFromOpenToHalfOpenEnabled: true
+#        waitDurationInOpenState: 10s
+#        failureRateThreshold: 50
+#        eventConsumerBufferSize: 10
+#  timelimiter:
+#    instances:
+#      inventory-service:
+#        timeoutDuration: 5s
+#  retry:
+#    instances:
+#      inventory-service:
+#        maxAttempts: 3
+#        waitDuration: 1s
+#        enableExponentialBackoff: true
+#        exponentialBackoffMultiplier: 2
+#  bulkhead:
+#    instances:
+#      inventory-service:
+#        maxConcurrentCalls: 20
+#        maxWaitDuration: 0
+#
+## Actuator Configuration
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,metrics,circuitbreakers,info
+#  endpoint:
+#    health:
+#      show-details: always
+#      show-components: always
+#    circuitbreakers:
+#      enabled: true
+#  health:
+#    circuitbreakers:
+#      enabled: true
+#
+## Server Configuration
+#server:
+#  port: 8081
+#
+## Logging Configuration
+#logging:
+#  level:
+#    com.JSR.order_service.config.InventoryClient: DEBUG
+#    org.springframework.cloud.openfeign: DEBUG
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.type.descriptor.sql: TRACE
+#    org.hibernate.orm.jdbc.bind: TRACE
+#    io.github.resilience4j: DEBUG
+#  pattern:
+#    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+
+
 spring:
   application:
-    name: ORDER-SERVICE
+    name: ORDER-SERVICE  # Identifies this service in Eureka registry and logs
   datasource:
-    url: jdbc:mysql://localhost:3306/orderservice
+    url: jdbc:mysql://localhost:3306/orderservice  # Database connection for orders
     username: root
     password: captain@cz
     hikari:
-      maximum-pool-size: 10
-      connection-timeout: 30000
+      maximum-pool-size: 10          # Limits concurrent DB connections to prevent overload
+      connection-timeout: 30000      # 30s timeout for getting DB connection
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: update              # Auto-create/update tables (use 'validate' in production)
+    show-sql: true                  # Log SQL queries for debugging
     properties:
       hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true            # Pretty-print SQL for easier reading
+        dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL-specific SQL generation
         jdbc:
-          time_zone: UTC
+          time_zone: UTC            # Ensure consistent timezone handling
   cloud:
     openfeign:
+      circuitbreaker:
+        enabled: true               # Enable Resilience4j circuit breaker for Feign clients
+        group:
+          enabled: true             # Use Resilience4j instead of Hystrix
       client:
         config:
           default:
-            connectTimeout: 5000
-            readTimeout: 5000
-            loggerLevel: basic
+            connectTimeout: 5000    # 5s timeout for establishing connection
+            readTimeout: 5000       # 5s timeout for reading response
+            loggerLevel: basic      # Log Feign request/response details
 
-# If using Eureka (uncomment if needed)
+# Eureka Client Configuration - Service Discovery
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/  # Eureka server location
+    fetch-registry: true            # Download registry of available services
+    register-with-eureka: true      # Register this service with Eureka
 
+# Resilience4j Configuration - Fault Tolerance
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventory-service:
+        registerHealthIndicator: true  # Expose circuit breaker status to actuator health checks
+        slidingWindowSize: 10          # Analyze last 10 calls for failure rate calculation
+        minimumNumberOfCalls: 5        # Need minimum 5 calls before circuit can open
+        permittedNumberOfCallsInHalfOpenState: 3  # Allow 3 test calls in half-open state
+        automaticTransitionFromOpenToHalfOpenEnabled: true  # Auto transition after wait duration
+        waitDurationInOpenState: 10s   # Wait 10s before testing if service recovered
+        failureRateThreshold: 50       # Open circuit if 50%+ calls fail
+        eventConsumerBufferSize: 10    # Buffer size for circuit breaker events
+  timelimiter:
+    instances:
+      inventory-service:
+        timeoutDuration: 5s            # Fail call if it takes longer than 5s
+  retry:
+    instances:
+      inventory-service:
+        maxAttempts: 3                 # Retry failed calls up to 3 times
+        waitDuration: 1s               # Wait 1s between retries
+        enableExponentialBackoff: true  # Use exponential backoff: 1s, 2s, 4s
+        exponentialBackoffMultiplier: 2 # Multiply wait time by 2 for each retry
+  bulkhead:
+    instances:
+      inventory-service:
+        maxConcurrentCalls: 20         # Maximum 20 concurrent calls to inventory service
+        maxWaitDuration: 0             # Don't wait for bulkhead, fail immediately when full
+
+# Actuator Configuration - Monitoring and Management
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,circuitbreakers,info  # Expose these monitoring endpoints
+  endpoint:
+    health:
+      show-details: always            # Show detailed health information
+      show-components: always         # Show health of individual components
+    circuitbreakers:
+      enabled: true                   # Enable circuit breaker endpoint
+  health:
+    circuitbreakers:
+      enabled: true                   # Include circuit breakers in health checks
+
+# Server Configuration
 server:
-  port: 8081
+  port: 8081                         # Port this service runs on
 
+# Logging Configuration - Debugging and Monitoring
 logging:
   level:
-    com.JSR.order_service.client.InventoryClient: DEBUG  # For Feign debugging
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql: TRACE
-    org.hibernate.orm.jdbc.bind: TRACE
+    com.JSR.order_service.config.InventoryClient: DEBUG  # Debug Feign client calls
+    org.springframework.cloud.openfeign: DEBUG          # Debug Feign framework
+    org.hibernate.SQL: DEBUG                            # Log all SQL statements
+    org.hibernate.type.descriptor.sql: TRACE           # Log SQL parameter values
+    org.hibernate.orm.jdbc.bind: TRACE                 # Log JDBC parameter binding
+    io.github.resilience4j: DEBUG                      # Debug circuit breaker transitions
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"  # Structured logging with trace IDs

@@ -2,7 +2,7 @@ package com.JSR.order_service.exception;
 
 public class InventoryServiceException extends RuntimeException{
 
-    public InventoryServiceException(String message, Throwable cause) {
-        super(message, cause);
+    public InventoryServiceException(String message) {
+        super(message);
     }
 }

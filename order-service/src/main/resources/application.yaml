@@ -41,7 +41,7 @@
 #    com.JSR.order_service.client.InventoryClient: DEBUG  # For Feign debugging
 #    org.hibernate.SQL: DEBUG
 #    org.hibernate.type.descriptor.sql: TRACE
-#    org.hibernate.orm.jdbc.bind: TRACE
+
 
 #
 #spring:

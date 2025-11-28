@@ -1,10 +1,61 @@
+#spring:
+#  application:
+#    name: SERVICE-REGISTRY
+#server:
+#  port: 8761
+##disable  as  client
+#eureka:
+#  client:
+#    register-with-eureka: false
+#    fetch-registry: false
+#
+#
+#    # TRACING CONFIGURATION
+#    zipkin:
+#      base-url: http://localhost:9411
+#      enabled: true
+#
+#    sleuth:
+#      sampler:
+#        probability: 1.0
+
+
+
 spring:
   application:
     name: SERVICE-REGISTRY
+
+  # ✅ CORRECT PLACEMENT: Zipkin & Sleuth under spring root
+  zipkin:
+    base-url: http://localhost:9411
+    enabled: true
+  sleuth:
+    sampler:
+      probability: 1.0
+
 server:
   port: 8761
-#disable  as  client
+
+# Eureka Server Configuration
 eureka:
   client:
     register-with-eureka: false
     fetch-registry: false
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,tracing
+  tracing:
+    sampling:
+      probability: 1.0
+
+# Logging Configuration
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    org.springframework.cloud.netflix.eureka: DEBUG
+    org.springframework.cloud.sleuth: DEBUG

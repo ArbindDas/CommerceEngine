@@ -386,6 +386,7 @@
 //}
 
 package com.JSR.order_service.service.impl;
+import com.JSR.order_service.Event.OrderPlacedEvent;
 import com.JSR.order_service.config.InventoryClient;
 import com.JSR.order_service.dto.*;
 import com.JSR.order_service.entites.Order;
@@ -396,11 +397,23 @@ import com.JSR.order_service.repository.OrderRepository;
 import com.JSR.order_service.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.concurrent.CompletableFuture;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Transactional
@@ -410,13 +423,63 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final InventoryClient inventoryClient;
 
+
+    private final KafkaTemplate<String , Object> kafkaTemplate;
+
     @Autowired
-    public OrderServiceImpl(OrderRepository orderRepository, InventoryClient inventoryClient) {
+    public OrderServiceImpl(OrderRepository orderRepository, InventoryClient inventoryClient, KafkaTemplate<String, Object> kafkaTemplate) {
         this.orderRepository = orderRepository;
         this.inventoryClient = inventoryClient;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
+//    @Override
+//    public OrderResponse placeOrder(OrderRequest request) {
+//        // STEP 1: Extract SKU codes from order request
+//        List<String> skuCodes = request.orderLineItems()
+//                .stream()
+//                .map(OrderLIneItemRequest::skuCode)
+//                .toList();
+//
+//        log.info("Placing order for SKUs: {}", skuCodes);
+//
+//        // STEP 2: Check inventory stock SYNCHRONOUSLY
+//        List<InventoryResponse> inventoryResponses;
+//        try {
+//            inventoryResponses = inventoryClient.checkStock(skuCodes);
+//        } catch (InventoryServiceException e) {
+//            log.error("Inventory service unavailable during stock check for SKUs: {}", skuCodes);
+//            throw new InventoryServiceException("Cannot place order - inventory service unavailable");
+//        }
+//
+//        // STEP 3: Validate stock availability
+//        validateStockAvailability(inventoryResponses, skuCodes);
+//
+//        // STEP 4: Create and save order
+//        Order order = createOrderEntity(request);
+//        Order savedOrder = orderRepository.save(order);
+//        // Ensure the topic exists before sending
+//        kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderName()));
+//        log.info("Order created successfully with id: {}", savedOrder.getId());
+//
+//        // STEP 5: Deduct inventory SYNCHRONOUSLY with compensation
+//        try {
+//            deductInventorySync(request.orderLineItems());
+//            log.info("Inventory deducted successfully for order id: {}", savedOrder.getId());
+//        } catch (Exception e) {
+//            // COMPENSATION: Delete the order if inventory deduction fails
+//            orderRepository.delete(savedOrder);
+//            log.error("Failed to deduct inventory, order {} rolled back: {}", savedOrder.getId(), e.getMessage());
+//            throw new InventoryServiceException("Order cancelled - failed to deduct inventory");
+//        }
+//
+//        // STEP 6: Convert to response DTO
+//        return mapToResponseDto(savedOrder);
+//    }
+
+
     @Override
+    @Transactional
     public OrderResponse placeOrder(OrderRequest request) {
         // STEP 1: Extract SKU codes from order request
         List<String> skuCodes = request.orderLineItems()
@@ -441,9 +504,11 @@ public class OrderServiceImpl implements OrderService {
         // STEP 4: Create and save order
         Order order = createOrderEntity(request);
         Order savedOrder = orderRepository.save(order);
-        log.info("Order created successfully with id: {}", savedOrder.getId());
 
-        // STEP 5: Deduct inventory SYNCHRONOUSLY with compensation
+        // STEP 5: Send Kafka message with proper error handling
+        sendOrderNotification(savedOrder);
+
+        // STEP 6: Deduct inventory SYNCHRONOUSLY with compensation
         try {
             deductInventorySync(request.orderLineItems());
             log.info("Inventory deducted successfully for order id: {}", savedOrder.getId());
@@ -454,13 +519,45 @@ public class OrderServiceImpl implements OrderService {
             throw new InventoryServiceException("Order cancelled - failed to deduct inventory");
         }
 
-        // STEP 6: Convert to response DTO
+        // STEP 7: Convert to response DTO
         return mapToResponseDto(savedOrder);
     }
 
     /**
-     * Validate stock availability from inventory responses
+     * Send order notification to Kafka with robust error handling
      */
+    /**
+     /**
+     * Send order notification to Kafka - simplified version
+     */
+    private void sendOrderNotification(Order order) {
+        try {
+            OrderPlacedEvent event = new OrderPlacedEvent(order.getOrderName());
+            log.info("📤 Sending Kafka message for order: {}", order.getOrderName());
+
+            // Simple approach without custom headers
+            CompletableFuture<SendResult<String, Object>> future =
+                    kafkaTemplate.send("notificationTopic", event);
+
+            future.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("❌ Failed to send Kafka message for order {}: {}",
+                            order.getOrderName(), throwable.getMessage());
+                } else {
+                    log.info("✅ Kafka message sent successfully for order {}. Offset: {}, Partition: {}",
+                            order.getOrderName(),
+                            result.getRecordMetadata().offset(),
+                            result.getRecordMetadata().partition());
+                }
+            });
+
+        } catch (Exception e) {
+            log.error("❌ Exception while sending Kafka message for order {}: {}",
+                    order.getOrderName(), e.getMessage());
+        }
+    }
+//     * Validate stock availability from inventory responses
+//     */
     private void validateStockAvailability(List<InventoryResponse> responses, List<String> skuCodes) {
         // Check if we got responses for all SKUs
         if (responses.size() != skuCodes.size()) {

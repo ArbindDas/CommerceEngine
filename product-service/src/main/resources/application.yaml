@@ -1,3 +1,39 @@
+#spring:
+#  application:
+#    name: PRODUCT-SERVICE
+#  data:
+#    mongodb:
+#      uri: mongodb://localhost:27017/ecomDB
+#
+#server:
+#  port: 8085
+#
+#
+## If using Eureka (uncomment if needed)
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka/
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info,metrics
+#
+#
+#
+#    # TRACING CONFIGURATION
+#    zipkin:
+#      base-url: http://localhost:9411
+#      enabled: true
+#
+#    sleuth:
+#      sampler:
+#        probability: 1.0
+
+
+
 spring:
   application:
     name: PRODUCT-SERVICE
@@ -5,20 +41,38 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/ecomDB
 
+  # ✅ CORRECT PLACEMENT: Zipkin & Sleuth under spring root
+  zipkin:
+    base-url: http://localhost:9411
+    enabled: true
+  sleuth:
+    sampler:
+      probability: 1.0
+
 server:
   port: 8085
 
-
-# If using Eureka (uncomment if needed)
+# Eureka Client Configuration
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
+# Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,tracing
+  # ✅ Add tracing configuration
+  tracing:
+    sampling:
+      probability: 1.0
 
-
+# Logging Configuration (add this)
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    org.springframework.data.mongodb.core: DEBUG
+    org.springframework.cloud.sleuth: DEBUG

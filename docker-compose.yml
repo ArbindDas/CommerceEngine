@@ -1,34 +1,62 @@
 services:
+  # ================================
+  # ZOOKEEPER SERVICE
+  # ================================
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.4
-    container_name: zookeeper_commerce
+    image: confluentinc/cp-zookeeper:7.4.4   # Official Confluent Zookeeper image
+    container_name: zookeeper_commerce       # Custom container name
     ports:
-      - "2181:2181"
+      - "2181:2181"                          # Map host port 2181 -> container port 2181
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_CLIENT_PORT: 2181            # Port on which Zookeeper listens for clients
+      ZOOKEEPER_TICK_TIME: 2000              # Basic time unit in Zookeeper (in ms)
     networks:
-      - commerce-network
+      - commerce-network                     # Attach Zookeeper to custom network
 
+  # ================================
+  # KAFKA SERVICE
+  # ================================
   kafka:
-    image: confluentinc/cp-kafka:7.4.4
-    container_name: kafka_commerce
+    image: confluentinc/cp-kafka:7.4.4       # Official Kafka image
+    container_name: kafka_commerce           # Custom container name
     ports:
-      - "9093:9093"
+      - "9093:9093"                          # External: host port 9093 -> container port 9093
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    depends_on:
-      - zookeeper
-    networks:
-      - commerce-network
+      KAFKA_BROKER_ID: 1                     # Unique ID for this Kafka broker
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Kafka connects to Zookeeper via internal hostname/port
 
+      # ----- ADVERTISED LISTENERS -----
+      # PLAINTEXT: internal Docker communication (container-to-container)
+      # PLAINTEXT_HOST: external communication (host-to-container)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+
+      # Security protocol mapping for listeners
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+
+      # Kafka brokers talk to each other using PLAINTEXT listener
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Actual listeners Kafka will bind to inside the container
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
+
+      # Kafka topics internals are replicated this many times (1 = single-broker setup)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # Auto-create topics (useful for local dev)
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+    depends_on:
+      - zookeeper                             # Kafka starts only after Zookeeper is ready
+    networks:
+      - commerce-network                      # Attach Kafka to same custom network
+
+# ================================
+# DOCKER NETWORK CONFIG
+# ================================
 networks:
   commerce-network:
-    driver: bridge
+    driver: bridge                             # Default bridge network (Docker-managed)
+
+
+#👉  todo -> Yes! If your services run inside Docker, you must use internal communication: kafka:9092.
+#   todo -> if NOT in Docker, use localhost:9093.**

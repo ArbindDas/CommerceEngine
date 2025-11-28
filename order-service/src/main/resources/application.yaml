@@ -690,162 +690,161 @@
 
 
 
-
 spring:
   application:
-    name: ORDER-SERVICE
+    name: ORDER-SERVICE  # Microservice name for service discovery and logging
   datasource:
-    url: jdbc:mysql://localhost:3306/orderservice
-    username: root
-    password: captain@cz
+    url: jdbc:mysql://localhost:3306/orderservice  # Database connection URL
+    username: root  # Database username
+    password: captain@cz  # Database password
     hikari:
-      maximum-pool-size: 10
-      connection-timeout: 30000
+      maximum-pool-size: 10  # Maximum database connections in pool
+      connection-timeout: 30000  # Max wait time to get connection (30 seconds)
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: update  # Automatically update database schema on startup
+    show-sql: true  # Log SQL statements for debugging
     properties:
       hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true  # Pretty-format SQL in logs
+        dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL-specific SQL dialect
         jdbc:
-          time_zone: UTC
+          time_zone: UTC  # Use UTC timezone for database operations
   kafka:
-    bootstrap-servers: localhost:9093
+    bootstrap-servers: localhost:9093  # Kafka broker address
     properties:
-      security.protocol: PLAINTEXT
+      security.protocol: PLAINTEXT  # No encryption for local development
       # Session and heartbeat settings
-      session.timeout.ms: 10000
-      heartbeat.interval.ms: 3000
-      metadata.max.age.ms: 30000
+      session.timeout.ms: 10000  # Time before broker considers client dead
+      heartbeat.interval.ms: 3000  # How often to send heartbeats to broker
+      metadata.max.age.ms: 30000  # How often to refresh metadata
       # Connection settings
-      connections.max.idle.ms: 540000
+      connections.max.idle.ms: 540000  # When to close idle connections
     producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer  # Serialize keys as strings
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer  # Serialize values as JSON
       properties:
-        spring.json.trusted.packages: "*"
-        spring.json.add.type.headers: false
+        spring.json.trusted.packages: "*"  # Allow all packages for deserialization
+        spring.json.add.type.headers: false  # Don't add type headers to messages
         # Critical connection properties
-        request.timeout.ms: 30000
-        delivery.timeout.ms: 60000
-        max.block.ms: 30000
-        retries: 3
+        request.timeout.ms: 30000  # Timeout for producer requests
+        delivery.timeout.ms: 60000  # Total timeout for message delivery
+        max.block.ms: 30000  # Max time to block when buffer is full
+        retries: 3  # Number of retries for failed messages
         # Connection settings
-        reconnect.backoff.ms: 1000
-        reconnect.backoff.max.ms: 10000
-        socket.connection.setup.timeout.ms: 10000
-        socket.connection.setup.timeout.max.ms: 30000
+        reconnect.backoff.ms: 1000  # Initial delay before reconnecting
+        reconnect.backoff.max.ms: 10000  # Maximum delay before reconnecting
+        socket.connection.setup.timeout.ms: 10000  # Socket connection timeout
+        socket.connection.setup.timeout.max.ms: 30000  # Max socket connection timeout
     template:
-      default-topic: notificationTopic
+      default-topic: notificationTopic  # Default topic for Kafka messages
     admin:
-      fail-fast: false  # Important: Don't fail application startup if Kafka is unavailable
+      fail-fast: false  # Don't fail app startup if Kafka is unavailable
   cloud:
     openfeign:
       circuitbreaker:
-        enabled: true
+        enabled: true  # Enable circuit breaker for Feign clients
         group:
-          enabled: true
+          enabled: true  # Enable circuit breaker groups
       client:
         config:
           default:
-            connectTimeout: 5000
-            readTimeout: 5000
-            loggerLevel: basic
+            connectTimeout: 5000  # Feign connection timeout (5 seconds)
+            readTimeout: 5000  # Feign read timeout (5 seconds)
+            loggerLevel: basic  # Feign client logging level
     zipkin:
-      base-url: http://localhost:9411
-      enabled: true
+      base-url: http://localhost:9411  # Zipkin distributed tracing server
+      enabled: true  # Enable distributed tracing
     sleuth:
       sampler:
-        probability: 1.0
+        probability: 1.0  # Sample 100% of traces for debugging
 
-# Eureka Client Configuration
+# Eureka Client Configuration - Service Discovery
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+      defaultZone: http://localhost:8761/eureka/  # Eureka server location
+    fetch-registry: true  # Fetch service registry from Eureka
+    register-with-eureka: true  # Register this service with Eureka
 
 # Resilience4j Configuration - Fault Tolerance
 resilience4j:
   circuitbreaker:
     instances:
       inventory-service:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 10s
-        failureRateThreshold: 50
-        eventConsumerBufferSize: 10
+        registerHealthIndicator: true  # Expose circuit breaker health
+        slidingWindowSize: 10  # Number of calls to track for failure rate
+        minimumNumberOfCalls: 5  # Min calls before calculating failure rate
+        permittedNumberOfCallsInHalfOpenState: 3  # Calls allowed in half-open state
+        automaticTransitionFromOpenToHalfOpenEnabled: true  # Auto transition states
+        waitDurationInOpenState: 10s  # Time in open state before trying half-open
+        failureRateThreshold: 50  # Percentage failure rate to open circuit
+        eventConsumerBufferSize: 10  # Buffer size for circuit breaker events
   timelimiter:
     instances:
       inventory-service:
-        timeoutDuration: 5s
+        timeoutDuration: 5s  # Timeout for external service calls
   retry:
     instances:
       inventory-service:
-        maxAttempts: 3
-        waitDuration: 1s
-        enableExponentialBackoff: true
-        exponentialBackoffMultiplier: 2
+        maxAttempts: 3  # Maximum number of retry attempts
+        waitDuration: 1s  # Initial wait between retries
+        enableExponentialBackoff: true  # Use exponential backoff strategy
+        exponentialBackoffMultiplier: 2  # Multiplier for exponential backoff
   # Rate Limiter Configuration
   ratelimiter:
     instances:
       inventory-service:
-        registerHealthIndicator: true
-        limitForPeriod: 10
-        limitRefreshPeriod: 1s
-        timeoutDuration: 0
-        allowHealthIndicatorToFail: false
-        subscribeForEvents: true
-        eventConsumerBufferSize: 50
+        registerHealthIndicator: true  # Expose rate limiter health
+        limitForPeriod: 10  # Maximum calls per period
+        limitRefreshPeriod: 1s  # Time window for rate limiting
+        timeoutDuration: 0  # Wait time for permission (0 = don't wait)
+        allowHealthIndicatorToFail: false  # Don't fail health check on rate limit
+        subscribeForEvents: true  # Subscribe to rate limiter events
+        eventConsumerBufferSize: 50  # Buffer size for rate limiter events
   bulkhead:
     instances:
       inventory-service:
-        maxConcurrentCalls: 20
-        maxWaitDuration: 0
+        maxConcurrentCalls: 20  # Maximum concurrent calls allowed
+        maxWaitDuration: 0  # Max wait time for bulkhead permission (0 = don't wait)
 
-# Actuator Configuration
+# Actuator Configuration - Monitoring and Management
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,circuitbreakers,ratelimiters,info,tracing
+        include: health,metrics,circuitbreakers,ratelimiters,info,tracing  # Exposed actuator endpoints
   endpoint:
     health:
-      show-details: always
-      show-components: always
+      show-details: always  # Always show detailed health information
+      show-components: always  # Always show health components
     circuitbreakers:
-      enabled: true
+      enabled: true  # Enable circuit breaker endpoint
     ratelimiters:
-      enabled: true
+      enabled: true  # Enable rate limiter endpoint
   health:
     circuitbreakers:
-      enabled: true
+      enabled: true  # Include circuit breakers in health check
     ratelimiters:
-      enabled: true
+      enabled: true  # Include rate limiters in health check
   # ✅ Add tracing to management
   tracing:
     sampling:
-      probability: 1.0
+      probability: 1.0  # Sample 100% of traces for management
 
 # Server Configuration
 server:
-  port: 8081
+  port: 8081  # HTTP port for this service
 
 # Logging Configuration
 logging:
   level:
-    com.JSR.order_service.config.InventoryClient: DEBUG
-    org.springframework.cloud.openfeign: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql: TRACE
-    org.hibernate.orm.jdbc.bind: TRACE
-    io.github.resilience4j: DEBUG
-    org.springframework.cloud.sleuth: DEBUG
+    com.JSR.order_service.config.InventoryClient: DEBUG  # Debug logging for inventory client
+    org.springframework.cloud.openfeign: DEBUG  # Debug logging for Feign clients
+    org.hibernate.SQL: DEBUG  # Log SQL statements
+    org.hibernate.type.descriptor.sql: TRACE  # Detailed SQL parameter logging
+    org.hibernate.orm.jdbc.bind: TRACE  # SQL parameter binding logging
+    io.github.resilience4j: DEBUG  # Debug logging for resilience4j
+    org.springframework.cloud.sleuth: DEBUG  # Debug logging for distributed tracing
   pattern:
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"  # Log pattern with trace IDs

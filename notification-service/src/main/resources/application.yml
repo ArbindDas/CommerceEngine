@@ -1,44 +1,47 @@
 spring:
   application:
-    name: NOTIFICATION-SERVICE
+    name: NOTIFICATION-SERVICE  # Microservice name for service discovery and logging
   kafka:
-    bootstrap-servers: localhost:9093
+    bootstrap-servers: localhost:9093  # Kafka broker address
     properties:
-      security.protocol: PLAINTEXT
+      security.protocol: PLAINTEXT  # No encryption for local development
     consumer:
-      group-id: notificationGroup  # Fixed: changed from notificationId to match logs
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: notificationGroup  # Consumer group ID for Kafka message distribution
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # Deserialize keys as strings
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer  # Deserialize values from JSON
       properties:
-        spring.json.trusted.packages: "*"
-        spring.json.type.mapping: event:com.JSR.notification_service.dto.OrderPlacedEvent
+        spring.json.trusted.packages: "*"  # Allow all packages for deserialization (security consideration for production)
+        spring.json.type.mapping: event:com.JSR.notification_service.dto.OrderPlacedEvent  # Map message types to Java classes
         # Add default type for deserialization
-        spring.json.value.default.type: com.JSR.notification_service.dto.OrderPlacedEvent
+        spring.json.value.default.type: com.JSR.notification_service.dto.OrderPlacedEvent  # Default class for deserialization
         # Use type headers (important!)
-        spring.json.add.type.headers: true
+        spring.json.add.type.headers: true  # Include type information in message headers for proper deserialization
     template:
-      default-topic: notificationTopic
+      default-topic: notificationTopic  # Default topic for producing messages (if needed)
     admin:
-      fail-fast: false
+      fail-fast: false  # Don't fail application startup if Kafka is unavailable
   zipkin:
-    base-url: http://localhost:9411
-    enabled: true
+    base-url: http://localhost:9411  # Zipkin distributed tracing server URL
+    enabled: true  # Enable distributed tracing
   sleuth:
     sampler:
-      probability: 1.0
+      probability: 1.0  # Sample 100% of traces for debugging
 
+# Eureka Client Configuration - Service Discovery
 eureka:
   client:
     service-url:
-      default-zone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+      default-zone: http://localhost:8761/eureka/  # Eureka server location
+    fetch-registry: true  # Fetch service registry from Eureka to discover other services
+    register-with-eureka: true  # Register this service with Eureka for discovery
 
+# Server Configuration
 server:
-  port: 8087
+  port: 8087  # HTTP port for this notification service
 
+# Logging Configuration
 logging:
   level:
-    org.apache.kafka: WARN
-    org.springframework.kafka: DEBUG
-    com.JSR.notification_service: DEBUG
+    org.apache.kafka: WARN  # Reduce Kafka library noise, show only warnings and errors
+    org.springframework.kafka: DEBUG  # Debug logging for Spring Kafka functionality
+    com.JSR.notification_service: DEBUG  # Debug logging for application-specific code

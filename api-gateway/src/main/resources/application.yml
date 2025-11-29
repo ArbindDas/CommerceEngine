@@ -37,15 +37,6 @@ spring:
           uri: http://service-registry:8761
           predicates:
             - Path=/eureka/**
-  zipkin:
-    base-url: http://zipkin:9411
-    enabled: true
-  sleuth:
-    web:
-      client:
-        enabled: true
-    sampler:
-      probability: 1.0
 
 eureka:
   client:
@@ -55,20 +46,21 @@ eureka:
     register-with-eureka: true
 
 management:
+  tracing:
+    sampling:
+      probability: 0.1
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
   endpoints:
     web:
       exposure:
         include: health,metrics,gateway,tracing
-  tracing:
-    sampling:
-      probability: 1.0
 
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.security: DEBUG
-    org.springframework.web.reactive: DEBUG
-    org.springframework.cloud.sleuth: DEBUG
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
 

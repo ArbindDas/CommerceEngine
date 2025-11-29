@@ -56,12 +56,13 @@ spring:
             connectTimeout: 5000
             readTimeout: 5000
             loggerLevel: basic
-    zipkin:
-      base-url: http://zipkin:9411
-      enabled: true
-    sleuth:
-      sampler:
-        probability: 1.0
+    # REMOVE the old zipkin configuration from here
+    # zipkin:
+    #   base-url: http://zipkin:9411
+    #   enabled: true
+    # sleuth:
+    #   sampler:
+    #     probability: 1.0
 
 eureka:
   client:
@@ -110,6 +111,12 @@ resilience4j:
         maxWaitDuration: 0
 
 management:
+  tracing:
+    sampling:
+      probability: 0.1  # Reduced from 1.0 for development
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans  # Add this line
   endpoints:
     web:
       exposure:
@@ -127,9 +134,6 @@ management:
       enabled: true
     ratelimiters:
       enabled: true
-  tracing:
-    sampling:
-      probability: 1.0
 
 server:
   port: 8081

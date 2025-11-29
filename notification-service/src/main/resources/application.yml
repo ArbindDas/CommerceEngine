@@ -47,7 +47,6 @@
 #    com.JSR.notification_service: DEBUG  # Debug logging for application-specific code
 
 
-
 spring:
   application:
     name: NOTIFICATION-SERVICE
@@ -57,12 +56,21 @@ spring:
       group-id: notificationGroup
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-  zipkin:
-    base-url: http://zipkin:9411
-    enabled: true
-  sleuth:
-    sampler:
-      probability: 1.0
+      properties:
+        spring.json.trusted.packages: "*"  # Add this for JSON deserialization
+        spring.json.add.type.headers: false
+    admin:
+      fail-fast: false
+      auto-create: false
+    properties:
+      security.protocol: PLAINTEXT  # Add this for Docker environment
+  # REMOVE the old zipkin configuration from here
+  # zipkin:
+  #   base-url: http://zipkin:9411
+  #   enabled: true
+  # sleuth:
+  #   sampler:
+  #     probability: 1.0
 
 eureka:
   client:
@@ -71,3 +79,23 @@ eureka:
 
 server:
   port: 8087
+
+management:
+  tracing:
+    sampling:
+      probability: 0.1  # Reduced from 1.0 for development
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans  # Add this line
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,tracing
+
+logging:
+  level:
+    org.springframework.kafka: DEBUG
+    org.apache.kafka: WARN
+    org.springframework.cloud.sleuth: DEBUG
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

@@ -13,12 +13,13 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-  zipkin:
-    base-url: http://zipkin:9411
-    enabled: true
-  sleuth:
-    sampler:
-      probability: 1.0
+  # REMOVE the old zipkin configuration from here
+  # zipkin:
+  #   base-url: http://zipkin:9411
+  #   enabled: true
+  # sleuth:
+  #   sampler:
+  #     probability: 1.0
 
 server:
   port: 8086
@@ -31,7 +32,10 @@ eureka:
 management:
   tracing:
     sampling:
-      probability: 1.0
+      probability: 0.1  # Reduced from 1.0 for development
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans  # Add this line
   endpoints:
     web:
       exposure:

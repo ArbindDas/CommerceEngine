@@ -1,67 +1,3 @@
-#services:
-#  # ================================
-#  # ZOOKEEPER SERVICE
-#  # ================================
-#  zookeeper:
-#    image: confluentinc/cp-zookeeper:7.4.4   # Official Confluent Zookeeper image
-#    container_name: zookeeper_commerce       # Custom container name
-#    ports:
-#      - "2181:2181"                          # Map host port 2181 -> container port 2181
-#    environment:
-#      ZOOKEEPER_CLIENT_PORT: 2181            # Port on which Zookeeper listens for clients
-#      ZOOKEEPER_TICK_TIME: 2000              # Basic time unit in Zookeeper (in ms)
-#    networks:
-#      - commerce-network                     # Attach Zookeeper to custom network
-#
-#  # ================================
-#  # KAFKA SERVICE
-#  # ================================
-#  kafka:
-#    image: confluentinc/cp-kafka:7.4.4       # Official Kafka image
-#    container_name: kafka_commerce           # Custom container name
-#    ports:
-#      - "9093:9093"                          # External: host port 9093 -> container port 9093
-#    environment:
-#      KAFKA_BROKER_ID: 1                     # Unique ID for this Kafka broker
-#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Kafka connects to Zookeeper via internal hostname/port
-#
-#      # ----- ADVERTISED LISTENERS -----
-#      # PLAINTEXT: internal Docker communication (container-to-container)
-#      # PLAINTEXT_HOST: external communication (host-to-container)
-#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
-#
-#      # Security protocol mapping for listeners
-#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-#
-#      # Kafka brokers talk to each other using PLAINTEXT listener
-#      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-#
-#      # Actual listeners Kafka will bind to inside the container
-#      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
-#
-#      # Kafka topics internals are replicated this many times (1 = single-broker setup)
-#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-#
-#      # Auto-create topics (useful for local dev)
-#      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-#
-#    depends_on:
-#      - zookeeper                             # Kafka starts only after Zookeeper is ready
-#    networks:
-#      - commerce-network                      # Attach Kafka to same custom network
-#
-## ================================
-## DOCKER NETWORK CONFIG
-## ================================
-#networks:
-#  commerce-network:
-#    driver: bridge                             # Default bridge network (Docker-managed)
-#
-#
-##👉  todo -> Yes! If your services run inside Docker, you must use internal communication: kafka:9092.
-##   todo -> if NOT in Docker, use localhost:9093.**
-
-
 services:
   # Keycloak for Authentication
   keycloak:
@@ -74,7 +10,6 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_PROXY: "edge"
-      # Optimized memory settings
       JAVA_OPTS: "-Xms128m -Xmx256m -XX:MetaspaceSize=64M -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Djava.awt.headless=true"
       JAVA_OPTS_APPEND: "-Djava.security.egd=file:/dev/./urandom"
     ports:
@@ -89,7 +24,6 @@ services:
     command:
       - start-dev
     restart: unless-stopped
-
 
   # Service Registry
   service-registry:
@@ -116,19 +50,17 @@ services:
     depends_on:
       service-registry:
         condition: service_healthy
-      keycloak:
-        condition: service_healthy  # Add this
+      zipkin:
+        condition: service_healthy
     networks:
       - microservices-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 10
 
-
-
-  # Inventory Service
+  # Other services remain the same...
   inventory-service:
     build: ./inventory-service
     container_name: inventory-service
@@ -144,7 +76,6 @@ services:
     networks:
       - microservices-network
 
-  # Order Service
   order-service:
     build: ./order-service
     container_name: order-service
@@ -162,7 +93,6 @@ services:
     networks:
       - microservices-network
 
-  # Product Service
   product-service:
     build: ./product-service
     container_name: product-service
@@ -178,7 +108,6 @@ services:
     networks:
       - microservices-network
 
-  # Notification Service
   notification-service:
     build: ./notification-service
     container_name: notification-service
@@ -194,7 +123,6 @@ services:
     networks:
       - microservices-network
 
-  # MySQL Database
   mysql-db:
     image: mysql:8.0
     container_name: mysql-db
@@ -211,7 +139,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # MongoDB
   mongo-db:
     image: mongo:6.0
     container_name: mongo-db
@@ -227,49 +154,76 @@ services:
       timeout: 5s
       retries: 5
 
-  # Kafka
+  # FIXED Zookeeper with volumes
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeperArvind
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
     ports:
-      - "2182:2181"  # Changed from 2181:2181 to 2182:2181
+      - "2181:2181"
     networks:
       - microservices-network
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # FIXED Kafka with volumes
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafkaArvind
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
     ports:
-      - "9094:9094"
+      - "9093:9093"
     networks:
       - microservices-network
+    volumes:
+      - kafka-data:/var/lib/kafka/data
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/realms/spring-boot-microservice-realm || exit 1" ]
-      interval: 30s
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
       timeout: 10s
-      retries: 3
+      retries: 10
 
-  # Zipkin for Distributed Tracing
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkinArvind
     ports:
-      - "9412:9411"
+      - "9411:9411"
+    environment:
+      - STORAGE_TYPE=mem
     networks:
       - microservices-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9411/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   microservices-network:
     driver: bridge
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:

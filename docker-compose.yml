@@ -63,6 +63,34 @@
 
 
 services:
+  # Keycloak for Authentication
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.2
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: captain@cz
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY: "edge"
+      # Optimized memory settings
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:MetaspaceSize=64M -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Djava.awt.headless=true"
+      JAVA_OPTS_APPEND: "-Djava.security.egd=file:/dev/./urandom"
+    ports:
+      - "8181:8080"
+    networks:
+      - microservices-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/realms/master || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    command:
+      - start-dev
+    restart: unless-stopped
+
+
   # Service Registry
   service-registry:
     build: ./service-registry
@@ -88,6 +116,8 @@ services:
     depends_on:
       service-registry:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy  # Add this
     networks:
       - microservices-network
     healthcheck:
@@ -95,6 +125,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+
 
   # Inventory Service
   inventory-service:
@@ -224,7 +256,7 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --list --bootstrap-server localhost:9092 || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/realms/spring-boot-microservice-realm || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3

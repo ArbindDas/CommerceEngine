@@ -1,0 +1,47 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+build/
+dist/
+out/
+target/
+*.class
+*.o
+*.exe
+
+# Secrets
+*.env
+*.env.*
+*.key
+*.pem
+*.crt
+
+# Shell scripts (you don't want to upload)
+*.sh
+*.bat
+
+# Logs
+*.log
+logs/
+
+# Temp
+*.tmp
+*.temp
+*.cache
+.cache/
+
+# Databases
+*.sql
+*.bson
+dump/
+
+# IDE files
+*.iml
+.idea/
+.vscode/

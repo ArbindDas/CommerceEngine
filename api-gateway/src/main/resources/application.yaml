@@ -1,388 +1,3 @@
-#
-#spring:
-#  application:
-#    name: API-GATEWAY
-#
-#  cloud:
-#    gateway:
-#      routes:
-#        - id: inventory-service
-#          uri: lb://INVENTORY-SERVICE
-#          predicates:
-#            - Path=/api/inventory/**
-#        - id: order-service
-#          uri: lb://ORDER-SERVICE
-#          predicates:
-#            - Path=/api/order/**
-#        - id: product-service
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/product/** , /api/test/**
-#        # Eureka Dashboard HTML
-#        - id: discovery-server
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/web
-#          filters:
-#            - SetPath=/
-#        # Eureka Dashboard static resources
-#        - id: discovery-server-static
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/**
-#
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/
-#
-#logging:
-#  level:
-#    # Spring Cloud Gateway
-#    org.springframework.cloud.gateway: DEBUG
-#    org.springframework.cloud.gateway.filter: DEBUG
-#    org.springframework.cloud.gateway.route: DEBUG
-#
-#    # WebFlux / Reactive stack
-#    org.springframework.web.reactive.function.client: DEBUG
-#    reactor.netty: DEBUG
-#
-#    # Security
-#    org.springframework.security: DEBUG
-#    org.springframework.security.web: DEBUG
-#    org.springframework.security.authentication: DEBUG
-#
-#    # Eureka / Discovery Client
-#    com.netflix.discovery: INFO
-#    com.netflix.eureka: INFO
-#    org.springframework.cloud.netflix.eureka: DEBUG
-#
-#
-
-
-
-
-
-#
-##
-#spring:
-#  application:
-#    name: API-GATEWAY
-#
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8181/realms/spring-boot-microservice-realm
-#
-#  cloud:
-#    gateway:
-#      routes:
-#        - id: inventory-service
-#          uri: lb://INVENTORY-SERVICE
-#          predicates:
-#            - Path=/api/inventory/**
-#          filters:
-#            - name: KeycloakRoleFilter
-#              args:
-#                requiredRole: USER  # Add appropriate role
-#
-#        - id: order-service
-#          uri: lb://ORDER-SERVICE
-#          predicates:
-#            - Path=/api/order/**
-#          filters:
-#            - name: KeycloakRoleFilter
-#              args:
-#                requiredRole: USER  # Add appropriate role
-#
-#        - id: product-service
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/product/**, /api/test/**
-#          filters:
-#            - name: KeycloakRoleFilter
-#              args:
-#                requiredRole: USER  # Add appropriate role
-#
-#        # Public routes (no authentication)
-#        - id: public-routes
-#          uri: lb://PRODUCT-SERVICE  # Adjust as needed
-#          predicates:
-#            - Path=/api/public/**
-#          # No KeycloakRoleFilter for public routes
-#
-#        # Eureka Dashboard HTML
-#        - id: discovery-server
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/web
-#          filters:
-#            - SetPath=/
-#        # Eureka Dashboard static resources
-#        - id: discovery-server-static
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/**
-#
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/
-#    fetch-registry: true
-#    register-with-eureka: true
-#
-#logging:
-#  level:
-#    # Spring Cloud Gateway
-#    org.springframework.cloud.gateway: DEBUG
-#    org.springframework.cloud.gateway.filter: DEBUG
-#    org.springframework.cloud.gateway.route: DEBUG
-#
-#    # WebFlux / Reactive stack
-#    org.springframework.web.reactive.function.client: DEBUG
-#    reactor.netty: DEBUG
-#
-#    # Security
-#    org.springframework.security: DEBUG
-#    org.springframework.security.oauth2: DEBUG
-#
-#    # Eureka / Discovery Client
-#    com.netflix.discovery: INFO
-#    com.netflix.eureka: INFO
-#    org.springframework.cloud.netflix.eureka: DEBUG
-#
-#
-## Remove keycloak properties if not using Keycloak adapter
-## These are only needed if you're using Keycloak Spring Boot adapter
-#keycloak:
-#   realm: your-realm
-#   auth-server-url: http://localhost:8181
-#   ssl-required: external
-#   resource: spring-cloud-client
-#   credentials:
-#     secret: fgDvJ8iy4Ml7gH2Draf8eeDLN0hqzaiZ
-#   use-resource-role-mappings: true
-#   bearer-only: true
-#
-#spring:
-#  application:
-#    name: API-GATEWAY
-#  main:
-#    web-application-type: reactive  # Add this line
-#
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8181/realms/spring-boot-microservice-realm
-#
-#  cloud:
-#    gateway:
-#      routes:
-#        - id: inventory-service
-#          uri: lb://INVENTORY-SERVICE
-#          predicates:
-#            - Path=/api/inventory/**
-#          filters:
-#            - name: KeycloakRoleFilter
-#              args:
-#                requiredRole: USER
-#
-#        - id: order-service
-#          uri: lb://ORDER-SERVICE
-#          predicates:
-#            - Path=/api/order/**
-#          filters:
-#            - name: KeycloakRoleFilter
-#              args:
-#                requiredRole: USER
-#
-#        - id: product-service
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/product/**, /api/test/**
-#          filters:
-#            - name: KeycloakRoleFilter
-#              args:
-#                requiredRole: USER
-#
-#        # Public routes (no authentication)
-#        - id: public-routes
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/public/**
-#
-#        # Eureka Dashboard
-#        - id: discovery-server
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/web
-#          filters:
-#            - SetPath=/
-#        - id: discovery-server-static
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/**
-#
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/
-#    fetch-registry: true
-#    register-with-eureka: true
-#
-#logging:
-#  level:
-#    org.springframework.cloud.gateway: DEBUG
-#    org.springframework.security: DEBUG
-#    org.springframework.web.reactive: DEBUG
-
-
-#
-#spring:
-#  application:
-#    name: API-GATEWAY
-#  main:
-#    web-application-type: reactive
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8181/realms/spring-boot-microservice-realm
-#  cloud:
-#    gateway:
-#      routes:
-#        - id: inventory-service
-#          uri: lb://INVENTORY-SERVICE
-#          predicates:
-#            - Path=/api/inventory/**
-#
-#        - id: order-service
-#          uri: lb://ORDER-SERVICE
-#          predicates:
-#            - Path=/api/order/**
-#
-#        - id: product-service
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/product/**, /api/test/**
-#
-#        # Public routes (no authentication)
-#        - id: public-routes
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/public/**
-#
-#        # Eureka Dashboard
-#        - id: discovery-server
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/web
-#          filters:
-#            - SetPath=/
-#        - id: discovery-server-static
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/**
-#
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/
-#    fetch-registry: true
-#    register-with-eureka: true
-#
-#logging:
-#  level:
-#    org.springframework.cloud.gateway: DEBUG
-#    org.springframework.security: DEBUG
-#    org.springframework.web.reactive: DEBUG
-
-
-#
-#spring:
-#  application:
-#    name: API-GATEWAY  # Identifies this as the API Gateway in service registry
-#  main:
-#    web-application-type: reactive  # Use reactive programming model for better performance
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8181/realms/spring-boot-microservice-realm  # Keycloak OIDC issuer
-#  cloud:
-#    gateway:
-#      routes:
-#        # Inventory Service Routing
-#        - id: inventory-service
-#          uri: lb://INVENTORY-SERVICE  # 'lb://' enables client-side load balancing via Eureka
-#          predicates:
-#            - Path=/api/inventory/**   # Route requests starting with /api/inventory to inventory service
-#
-#        # Order Service Routing
-#        - id: order-service
-#          uri: lb://ORDER-SERVICE
-#          predicates:
-#            - Path=/api/order/**       # Route order-related requests to order service
-#
-#        # Product Service Routing
-#        - id: product-service
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/product/**, /api/test/**  # Multiple path patterns for product service
-#
-#        # Public routes (no authentication required)
-#        - id: public-routes
-#          uri: lb://PRODUCT-SERVICE
-#          predicates:
-#            - Path=/api/public/**      # Public endpoints bypass security
-#
-#        # Eureka Dashboard Routing
-#        - id: discovery-server
-#          uri: http://localhost:8761   # Static URI for Eureka server
-#          predicates:
-#            - Path=/eureka/web         # Route Eureka web interface
-#          filters:
-#            - SetPath=/                # Rewrite path to root for Eureka
-#
-#        # Eureka Static Resources
-#        - id: discovery-server-static
-#          uri: http://localhost:8761
-#          predicates:
-#            - Path=/eureka/**          # Route all Eureka static resources (CSS, JS)
-#
-#
-#
-#  # Tracing Configuration
-#    # ADD THIS - Tracing Configuration
-#    zipkin:
-#      base-url: http://localhost:9411  # Zipkin server URL
-#      enabled: true
-#
-#    sleuth:
-#      web:
-#        client:
-#          enabled: true
-#      sampler:
-#        probability: 1.0  # 100% tracing for development
-## Eureka Client Configuration - Service Discovery
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/  # Connect to Eureka server
-#    fetch-registry: true            # Download service registry from Eureka
-#    register-with-eureka: true      # Register gateway itself with Eureka
-#
-## Logging Configuration - Gateway Debugging
-#logging:
-#  level:
-#    org.springframework.cloud.gateway: DEBUG    # Debug gateway routing decisions
-#    org.springframework.security: DEBUG         # Debug security and JWT validation
-#    org.springframework.web.reactive: DEBUG     # Debug reactive web layer
-
-
-
 spring:
   application:
     name: API-GATEWAY
@@ -396,47 +11,34 @@ spring:
   cloud:
     gateway:
       routes:
-        # Inventory Service Routing
         - id: inventory-service
           uri: lb://INVENTORY-SERVICE
           predicates:
             - Path=/api/inventory/**
-
-        # Order Service Routing
         - id: order-service
           uri: lb://ORDER-SERVICE
           predicates:
             - Path=/api/order/**
-
-        # Product Service Routing
         - id: product-service
           uri: lb://PRODUCT-SERVICE
           predicates:
             - Path=/api/product/**, /api/test/**
-
-        # Public routes (no authentication required)
         - id: public-routes
           uri: lb://PRODUCT-SERVICE
           predicates:
             - Path=/api/public/**
-
-        # Eureka Dashboard Routing
         - id: discovery-server
-          uri: http://localhost:8761
+          uri: http://service-registry:8761
           predicates:
             - Path=/eureka/web
           filters:
             - SetPath=/
-
-        # Eureka Static Resources
         - id: discovery-server-static
-          uri: http://localhost:8761
+          uri: http://service-registry:8761
           predicates:
             - Path=/eureka/**
-
-  # ✅ CORRECT PLACEMENT: Zipkin & Sleuth under spring root
   zipkin:
-    base-url: http://localhost:9411
+    base-url: http://zipkin:9411
     enabled: true
   sleuth:
     web:
@@ -445,15 +47,13 @@ spring:
     sampler:
       probability: 1.0
 
-# Eureka Client Configuration
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://service-registry:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
 
-# ✅ Add Actuator Configuration for API Gateway
 management:
   endpoints:
     web:
@@ -463,7 +63,6 @@ management:
     sampling:
       probability: 1.0
 
-# Logging Configuration
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

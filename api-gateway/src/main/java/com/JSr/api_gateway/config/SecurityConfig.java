@@ -1,87 +1,5 @@
-//package com.JSr.api_gateway.config;
-//
-//import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.Customizer;
-//import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-//import org.springframework.security.config.web.server.ServerHttpSecurity;
-//import org.springframework.security.core.GrantedAuthority;
-//import org.springframework.security.core.authority.SimpleGrantedAuthority;
-//import org.springframework.security.web.server.SecurityWebFilterChain;
-//
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.stream.Collectors;
-//
-//@Configuration
-//@EnableWebFluxSecurity  // Use WebFlux security for reactive applications
-//public class SecurityConfig {
-//
-//    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
-//    private String issuerUri;
-//
-//
-//    @Bean
-//    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-//        return http
-//                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-//                .authorizeExchange(exchanges -> exchanges
-//                        .pathMatchers("/api/public/**", "/eureka/**").permitAll()
-//                        .pathMatchers("/api/inventory/**", "/api/order/**", "/api/product/**", "/api/test/**")
-//                        .authenticated() // Changed from hasRole to just authenticated
-//                        .pathMatchers("/api/admin/**").hasRole("ADMIN")
-//                        .anyExchange().authenticated()
-//                )
-//                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-//                .build();
-//    }
-//
-//    @Bean
-//    public org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter jwtAuthenticationConverter() {
-//        var converter = new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter();
-//        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-//            List<GrantedAuthority> authorities = new ArrayList<>();
-//
-//            // Extract realm roles
-//            Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-//            if (realmAccess != null) {
-//                @SuppressWarnings("unchecked")
-//                List<String> roles = (List<String>) realmAccess.get("roles");
-//                if (roles != null) {
-//                    authorities.addAll(roles.stream()
-//                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-//                            .toList());
-//                }
-//            }
-//
-//            // Extract client-specific roles
-//            Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
-//            if (resourceAccess != null) {
-//                // Use your client ID from Keycloak configuration
-//                @SuppressWarnings("unchecked")
-//                Map<String, Object> client = (Map<String, Object>) resourceAccess.get("your-client-id");
-//                if (client != null) {
-//                    @SuppressWarnings("unchecked")
-//                    List<String> clientRoles = (List<String>) client.get("roles");
-//                    if (clientRoles != null) {
-//                        authorities.addAll(clientRoles.stream()
-//                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-//                                .toList());
-//                    }
-//                }
-//            }
-//
-//            return authorities;
-//        });
-//        return converter;
-//    }
-//}
 
 package com.JSr.api_gateway.config;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -203,7 +121,6 @@ public class SecurityConfig {
 
             return authorities;
         });
-
         return converter;
     }
 }
